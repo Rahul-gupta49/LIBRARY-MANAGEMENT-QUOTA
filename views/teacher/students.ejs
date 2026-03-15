@@ -1,0 +1,41 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+<div class="container">
+  <div class="page-header">
+    <h1>👥 Manage Students</h1>
+    <a href="/teacher/students/add" class="btn btn-primary">➕ Add Student</a>
+  </div>
+
+  <div class="card">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Active Borrowings</th>
+            <th>Registered</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (students.length === 0) { %>
+            <tr><td colspan="4" class="text-center">No students registered yet.</td></tr>
+          <% } %>
+          <% students.forEach(student => { %>
+            <tr>
+              <td><strong><%= student.full_name %></strong></td>
+              <td>@<%= student.username %></td>
+              <td>
+                <span class="badge <%= student.active_borrowings > 0 ? 'badge-borrowed' : 'badge-available' %>">
+                  <%= student.active_borrowings %>
+                </span>
+              </td>
+              <td><%= new Date(student.created_at).toLocaleDateString() %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

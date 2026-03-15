@@ -1,0 +1,16 @@
+<%- include('partials/header') %>
+<% if (user) { %>
+  <%- include('partials/navbar') %>
+<% } %>
+<div class="container">
+  <div class="card text-center">
+    <h2>⚠️ Error</h2>
+    <p><%= message %></p>
+    <% if (user) { %>
+      <a href="/<%= user.role %>/dashboard" class="btn btn-primary mt-1">Go to Dashboard</a>
+    <% } else { %>
+      <a href="/login" class="btn btn-primary mt-1">Go to Login</a>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>

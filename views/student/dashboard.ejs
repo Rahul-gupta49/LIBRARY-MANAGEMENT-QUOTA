@@ -1,0 +1,66 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+<div class="container">
+  <h1 style="color: #1a237e; margin-bottom: 1.5rem;">Welcome, <%= user.full_name %> 👋</h1>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-number"><%= borrowedBooks.length %></div>
+      <div class="stat-label">Books You're Borrowing</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number"><%= totalAvailableBooks %></div>
+      <div class="stat-label">Books Available</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number"><%= 3 - borrowedBooks.length %></div>
+      <div class="stat-label">Remaining Quota</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📚 Your Currently Borrowed Books</h2>
+    <% if (borrowedBooks.length === 0) { %>
+      <p class="text-center mt-1">You have no books borrowed. <a href="/student/books" class="text-link">Browse available books</a></p>
+    <% } else { %>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Author</th>
+              <th>Borrowed On</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% borrowedBooks.forEach(b => { %>
+              <tr>
+                <td><strong><%= b.book_title %></strong></td>
+                <td><%= b.book_author %></td>
+                <td><%= new Date(b.borrow_date).toLocaleDateString() %></td>
+                <td><%= new Date(b.due_date).toLocaleDateString() %></td>
+                <td>
+                  <% if (new Date(b.due_date) < new Date()) { %>
+                    <span class="badge badge-overdue">Overdue</span>
+                  <% } else { %>
+                    <span class="badge badge-borrowed">Active</span>
+                  <% } %>
+                </td>
+                <td>
+                  <form method="POST" action="/student/books/return/<%= b.id %>">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-success btn-sm">Return</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>
