@@ -10,6 +10,16 @@ const fs = require('fs');
 
 let app;
 
+// Helper to get CSRF token and cookies from a GET request
+async function getCsrfToken(url) {
+  const res = await request(app).get(url);
+  const cookies = res.headers['set-cookie'] || [];
+  const tokenMatch = res.text.match(/name="_csrf"\s+value="([^"]+)"/);
+  const token = tokenMatch ? tokenMatch[1] : '';
+  const cookieHeader = cookies.map(c => c.split(';')[0]).join('; ');
+  return { token, cookieHeader };
+}
+
 beforeAll(() => {
   app = createApp();
 });
@@ -47,9 +57,11 @@ describe('Authentication', () => {
   });
 
   test('POST /register should create a student account', async () => {
+    const { token, cookieHeader } = await getCsrfToken('/register');
     const res = await request(app)
       .post('/register')
-      .send('username=teststudent&password=password123&confirm_password=password123&full_name=Test+Student&role=student');
+      .set('Cookie', cookieHeader)
+      .send(`_csrf=${encodeURIComponent(token)}&username=teststudent&password=password123&confirm_password=password123&full_name=Test+Student&role=student`);
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe('/login');
 
@@ -62,67 +74,91 @@ describe('Authentication', () => {
   });
 
   test('POST /register should create a teacher account', async () => {
+    const { token, cookieHeader } = await getCsrfToken('/register');
     const res = await request(app)
       .post('/register')
-      .send('username=testteacher&password=password123&confirm_password=password123&full_name=Test+Teacher&role=teacher');
+      .set('Cookie', cookieHeader)
+      .send(`_csrf=${encodeURIComponent(token)}&username=testteacher&password=password123&confirm_password=password123&full_name=Test+Teacher&role=teacher`);
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe('/login');
   });
 
   test('POST /register should reject duplicate username', async () => {
+    const { token, cookieHeader } = await getCsrfToken('/register');
     const res = await request(app)
       .post('/register')
-      .send('username=teststudent&password=password123&confirm_password=password123&full_name=Duplicate&role=student');
+      .set('Cookie', cookieHeader)
+      .send(`_csrf=${encodeURIComponent(token)}&username=teststudent&password=password123&confirm_password=password123&full_name=Duplicate&role=student`);
     expect(res.status).toBe(200);
     expect(res.text).toContain('Username already taken');
   });
 
   test('POST /register should reject mismatched passwords', async () => {
+    const { token, cookieHeader } = await getCsrfToken('/register');
     const res = await request(app)
       .post('/register')
-      .send('username=newuser&password=password123&confirm_password=different&full_name=New+User&role=student');
+      .set('Cookie', cookieHeader)
+      .send(`_csrf=${encodeURIComponent(token)}&username=newuser&password=password123&confirm_password=different&full_name=New+User&role=student`);
     expect(res.status).toBe(200);
     expect(res.text).toContain('Passwords do not match');
   });
 
   test('POST /register should reject short passwords', async () => {
+    const { token, cookieHeader } = await getCsrfToken('/register');
     const res = await request(app)
       .post('/register')
-      .send('username=newuser&password=abc&confirm_password=abc&full_name=New+User&role=student');
+      .set('Cookie', cookieHeader)
+      .send(`_csrf=${encodeURIComponent(token)}&username=newuser&password=abc&confirm_password=abc&full_name=New+User&role=student`);
     expect(res.status).toBe(200);
     expect(res.text).toContain('Password must be at least 6 characters');
   });
 
   test('POST /login with valid credentials should redirect to dashboard', async () => {
+    const { token, cookieHeader } = await getCsrfToken('/login');
     const res = await request(app)
       .post('/login')
-      .send('username=teststudent&password=password123');
+      .set('Cookie', cookieHeader)
+      .send(`_csrf=${encodeURIComponent(token)}&username=teststudent&password=password123`);
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe('/student/dashboard');
   });
 
   test('POST /login with teacher should redirect to teacher dashboard', async () => {
+    const { token, cookieHeader } = await getCsrfToken('/login');
     const res = await request(app)
       .post('/login')
-      .send('username=admin&password=admin123');
+      .set('Cookie', cookieHeader)
+      .send(`_csrf=${encodeURIComponent(token)}&username=admin&password=admin123`);
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe('/teacher/dashboard');
   });
 
   test('POST /login with invalid credentials should show error', async () => {
+    const { token, cookieHeader } = await getCsrfToken('/login');
     const res = await request(app)
       .post('/login')
-      .send('username=teststudent&password=wrongpassword');
+      .set('Cookie', cookieHeader)
+      .send(`_csrf=${encodeURIComponent(token)}&username=teststudent&password=wrongpassword`);
     expect(res.status).toBe(200);
     expect(res.text).toContain('Invalid username or password');
   });
 
   test('POST /login with missing fields should show error', async () => {
+    const { token, cookieHeader } = await getCsrfToken('/login');
     const res = await request(app)
       .post('/login')
-      .send('username=&password=');
+      .set('Cookie', cookieHeader)
+      .send(`_csrf=${encodeURIComponent(token)}&username=&password=`);
     expect(res.status).toBe(200);
     expect(res.text).toContain('Username and password are required');
+  });
+
+  test('POST /login without CSRF token should be rejected', async () => {
+    const res = await request(app)
+      .post('/login')
+      .send('username=admin&password=admin123');
+    // Request should be rejected - either by CSRF protection (403) or rate limiter (429)
+    expect([403, 429]).toContain(res.status);
   });
 });
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const { doubleCsrf } = require('csrf-csrf');
 const path = require('path');
@@ -17,6 +18,9 @@ function createApp() {
 
   // Body parsing
   app.use(express.urlencoded({ extended: false }));
+
+  // Cookie parser (required for CSRF)
+  app.use(cookieParser());
 
   // Session
   const isProduction = process.env.NODE_ENV === 'production';
