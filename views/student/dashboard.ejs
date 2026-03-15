@@ -51,6 +51,7 @@
                 </td>
                 <td>
                   <form method="POST" action="/student/books/return/<%= b.id %>">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit" class="btn btn-success btn-sm">Return</button>
                   </form>
                 </td>

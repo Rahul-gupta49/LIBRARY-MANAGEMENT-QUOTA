@@ -12,6 +12,7 @@
     <% } %>
 
     <form method="POST" action="/teacher/students/add">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label for="full_name">Full Name</label>
         <input type="text" id="full_name" name="full_name" required placeholder="Enter student's full name">
